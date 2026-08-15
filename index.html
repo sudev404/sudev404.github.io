@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio of Sudev CS – Cybersecurity & Penetration Testing" />
+  <title>Sudev CS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0a0c10;
+      --surface:  #111318;
+      --border:   #1e2330;
+      --green:    #00e5a0;
+      --green-dim:#00b37a;
+      --amber:    #ffb340;
+      --text:     #d4dbe8;
+      --muted:    #6b7591;
+      --danger:   #ff4d6a;
+      --mono:     'JetBrains Mono', monospace;
+      --sans:     'Inter', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINE overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,229,160,.015) 2px,
+        rgba(0,229,160,.015) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+      height: 60px;
+      background: rgba(10,12,16,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--green);
+      letter-spacing: .05em;
+    }
+    .nav-logo span { color: var(--muted); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: .08em;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--green); }
+
+    /* ── SECTIONS ── */
+    section { padding: 6rem clamp(1.5rem, 8vw, 8rem); }
+    .section-label {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--green);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h2.section-title {
+      font-family: var(--mono);
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 3rem;
+      line-height: 1.2;
+    }
+
+    /* ── HERO ── */
+    #home {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 6rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4rem;
+      align-items: center;
+    }
+    .terminal-badge {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--green);
+      background: rgba(0,229,160,.07);
+      border: 1px solid rgba(0,229,160,.25);
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem .8rem;
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+    }
+    .terminal-badge::before { content: '▶'; font-size: .6rem; }
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: .5rem;
+    }
+    h1 .accent { color: var(--green); }
+    .hero-role {
+      font-family: var(--mono);
+      font-size: clamp(.95rem, 2vw, 1.2rem);
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+    .hero-role .cursor {
+      display: inline-block;
+      width: 2px; height: 1.1em;
+      background: var(--green);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .hero-desc {
+      max-width: 520px;
+      color: var(--text);
+      font-size: .95rem;
+      margin-bottom: 2.5rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn {
+      font-family: var(--mono);
+      font-size: .8rem;
+      letter-spacing: .08em;
+      padding: .7rem 1.6rem;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: #000;
+    }
+    .btn-primary:hover { background: #00ffb3; }
+    .btn-outline {
+      background: transparent;
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+    .btn-outline:hover { background: rgba(0,229,160,.08); }
+
+    /* terminal card on hero */
+    .hero-terminal {
+      width: 340px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-size: .78rem;
+    }
+    .terminal-bar {
+      background: #1a1d26;
+      padding: .55rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #28c840; }
+    .terminal-bar span { color: var(--muted); font-size: .7rem; margin-left: auto; }
+    .terminal-body { padding: 1.2rem; color: var(--green); line-height: 2; }
+    .terminal-body .prompt { color: var(--muted); }
+    .terminal-body .cmd { color: #fff; }
+    .terminal-body .out { color: var(--green-dim); }
+    .terminal-body .warn { color: var(--amber); }
+
+    /* ── ABOUT ── */
+    #about { background: var(--surface); }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+    .about-text p { color: var(--text); margin-bottom: 1rem; font-size: .95rem; }
+    .edu-item {
+      border-left: 2px solid var(--border);
+      padding-left: 1.2rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .edu-item::before {
+      content: '';
+      position: absolute; left: -5px; top: 6px;
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+    }
+    .edu-year {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--green);
+      letter-spacing: .1em;
+    }
+    .edu-title { font-weight: 600; color: #fff; margin: .2rem 0; }
+    .edu-org { color: var(--muted); font-size: .88rem; }
+
+    /* ── SKILLS ── */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .skill-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      transition: border-color .2s;
+    }
+    .skill-card:hover { border-color: var(--green); }
+    .skill-card-title {
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--green);
+      letter-spacing: .1em;
+      margin-bottom: 1rem;
+    }
+    .tag-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .tag {
+      font-family: var(--mono);
+      font-size: .7rem;
+      padding: .25rem .6rem;
+      border-radius: 2px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* ── CERTS ── */
+    .certs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .cert-badge {
+      font-family: var(--mono);
+      font-size: .78rem;
+      padding: .5rem 1rem;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      border-radius: 2px;
+      background: rgba(255,179,64,.05);
+    }
+
+    /* ── EXPERIENCE ── */
+    #experience { background: var(--surface); }
+    .exp-card {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      max-width: 780px;
+    }
+    .exp-header {
+      background: #15181f;
+      padding: 1.2rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .exp-role { font-size: 1.05rem; font-weight: 600; color: #fff; }
+    .exp-company { color: var(--green); font-family: var(--mono); font-size: .85rem; }
+    .exp-period {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: .25rem .6rem;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+    .exp-body { padding: 1.5rem; }
+    .exp-body ul { list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+    .exp-body li {
+      font-size: .9rem;
+      color: var(--text);
+      padding-left: 1.2rem;
+      position: relative;
+    }
+    .exp-body li::before {
+      content: '▸';
+      position: absolute; left: 0;
+      color: var(--green);
+      font-size: .75rem;
+      top: .1em;
+    }
+
+    /* ── PROJECTS ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: border-color .2s, transform .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--green), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .project-card:hover { border-color: rgba(0,229,160,.4); transform: translateY(-2px); }
+    .project-card:hover::before { opacity: 1; }
+    .project-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .project-icon {
+      width: 36px; height: 36px;
+      background: rgba(0,229,160,.1);
+      border: 1px solid rgba(0,229,160,.2);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .project-links { display: flex; gap: .5rem; }
+    .project-link {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: .2rem .5rem;
+      border-radius: 2px;
+      transition: color .2s, border-color .2s;
+    }
+    .project-link:hover { color: var(--green); border-color: var(--green); }
+    .project-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .project-desc { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+    .project-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: auto; }
+    .project-tag {
+      font-family: var(--mono);
+      font-size: .68rem;
+      padding: .2rem .5rem;
+      background: rgba(0,229,160,.06);
+      border: 1px solid rgba(0,229,160,.15);
+      color: var(--green-dim);
+      border-radius: 2px;
+    }
+
+    /* ── CTF/LABS ── */
+    #labs { background: var(--surface); }
+    .labs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .lab-item {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .8rem;
+      transition: border-color .2s;
+    }
+    .lab-item:hover { border-color: rgba(0,229,160,.3); }
+    .lab-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-top: .5rem;
+      flex-shrink: 0;
+    }
+    .lab-dot.warn { background: var(--amber); }
+    .lab-dot.danger { background: var(--danger); }
+    .lab-name { font-weight: 500; color: #fff; font-size: .9rem; margin-bottom: .25rem; }
+    .lab-detail { font-size: .8rem; color: var(--muted); font-family: var(--mono); }
+
+    /* ── CONTACT ── */
+    .contact-box {
+      max-width: 600px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2.5rem;
+      background: var(--surface);
+    }
+    .contact-box p { color: var(--text); margin-bottom: 2rem; font-size: .95rem; }
+    .contact-links { display: flex; flex-direction: column; gap: .8rem; }
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-family: var(--mono);
+      font-size: .82rem;
+    }
+    .contact-label { color: var(--muted); width: 80px; flex-shrink: 0; }
+    .contact-val { color: var(--text); text-decoration: none; }
+    .contact-val:hover { color: var(--green); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem clamp(1.5rem, 8vw, 8rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    footer p {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--green); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-terminal { display: none; }
+      .about-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+
+    /* ── GLITCH on name ── */
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 2px; top: 0;
+      color: var(--danger);
+      clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+      transform: translate(-2px);
+      animation: glitch 4s infinite;
+      opacity: 0;
+    }
+    @keyframes glitch {
+      0%, 90%, 100% { opacity: 0; }
+      91% { opacity: .6; transform: translate(-3px, 1px) skewX(-2deg); }
+      93% { opacity: 0; }
+      95% { opacity: .4; transform: translate(3px, -1px); }
+      97% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">sudev<span>@kali</span>:~$</div>
+  <ul class="nav-links">
+    <li><a href="#home">~/home</a></li>
+    <li><a href="#about">~/about</a></li>
+    <li><a href="#skills">~/skills</a></li>
+    <li><a href="#experience">~/experience</a></li>
+    <li><a href="#projects">~/projects</a></li>
+    <li><a href="#labs">~/labs</a></li>
+    <li><a href="#contact">~/contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="home">
+  <div class="hero-grid">
+    <div>
+      <div class="terminal-badge">available for work</div>
+      <h1>
+        <span class="glitch" data-text="Sudev CS">Sudev CS</span><br/>
+        <span class="accent">Breaking things</span><br/>to secure them.
+      </h1>
+      <p class="hero-role">Cybersecurity &amp; Penetration Testing<span class="cursor"></span></p>
+      <p class="hero-desc">
+        BCA final-year student specializing in vulnerability assessment, web app security,
+        and Active Directory attacks. Builder of VulnScanner.
+        IBM Certified Cybersecurity Analyst.
+      </p>
+      <div class="hero-actions">
+        <a href="#projects" class="btn btn-primary">View Projects</a>
+        <a href="https://github.com/sudev404" target="_blank" class="btn btn-outline">GitHub ↗</a>
+        <a href="#contact" class="btn btn-outline">Contact</a>
+      </div>
+    </div>
+    <div class="hero-terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span>vuln_scanner — bash</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="prompt">aztro@kali</span>:~$ <span class="cmd">nmap -sT -Pn 192.168.1.0/24</span></div>
+        <div class="out">Starting Nmap 7.94...</div>
+        <div class="out">Discovered open port 80/tcp</div>
+        <div class="out">Discovered open port 443/tcp</div>
+        <div class="warn">CVE-2023-30258 detected</div>
+        <div><span class="prompt">aztro@kali</span>:~$ <span class="cmd">python3 vuln_scanner.py</span></div>
+        <div class="out">[+] Phase 1: Port scan complete</div>
+        <div class="out">[+] Phase 2: CVE detection done</div>
+        <div class="out">[+] Phase 3: Web scanner active</div>
+        <div class="out">[+] Phase 4: SQLi/XSS testing...</div>
+        <div><span class="prompt">aztro@kali</span>:~$ <span class="cmd">_</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-label">// about</div>
+  <h2 class="section-title">Background</h2>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>
+        I'm a final-year BCA student at Krupanidhi Degree College, Bengaluru (Bengaluru North University),
+        with a deep focus on offensive security — vulnerability assessment, penetration testing, and
+        Active Directory attack chains.
+      </p>
+      <p>
+        My hands-on experience ranges from building full-stack security tooling to compromising
+        simulated enterprise environments. I spend time on TryHackMe (mr_aztro), participate in
+        CTF challenges, and enjoy chess and puzzles.
+      </p>
+      <p>
+        I'm actively seeking entry-level roles in penetration testing or SOC analysis.
+      </p>
+    </div>
+    <div>
+      <div class="edu-item">
+        <div class="edu-year">2023 – 2026</div>
+        <div class="edu-title">Bachelor of Computer Applications</div>
+        <div class="edu-org">Krupanidhi Degree College · Bengaluru North University</div>
+      </div>
+      <div class="edu-item">
+        <div class="edu-year">2021 – 2023</div>
+        <div class="edu-title">Higher Secondary — Computer Science</div>
+        <div class="edu-org">GOVT HSS, Karupadanna · Thrissur, Kerala</div>
+      </div>
+      <div class="certs-row">
+        <div class="cert-badge">IBM Cybersecurity Analyst</div>
+        <div class="cert-badge">CECSA1IN · Dec 2025</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-label">// skills</div>
+  <h2 class="section-title">Technical Skills</h2>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-card-title">OFFENSIVE SECURITY</div>
+      <div class="tag-list">
+        <span class="tag">Penetration Testing</span>
+        <span class="tag">Vulnerability Assessment</span>
+        <span class="tag">SQLi / XSS</span>
+        <span class="tag">SUID Privesc</span>
+        <span class="tag">Reverse Shells</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-card-title">ACTIVE DIRECTORY</div>
+      <div class="tag-list">
+        <span class="tag">AS-REP Roasting</span>
+        <span class="tag">Kerberoasting</span>
+        <span class="tag">Pass-the-Hash</span>
+        <span class="tag">DCSync</span>
+        <span class="tag">Golden Ticket</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-card-title">TOOLS</div>
+      <div class="tag-list">
+        <span class="tag">Nmap</span>
+        <span class="tag">Metasploit</span>
+        <span class="tag">Burp Suite</span>
+        <span class="tag">Wireshark</span>
+        <span class="tag">Impacket</span>
+        <span class="tag">Aircrack-ng</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-card-title">DEVELOPMENT</div>
+      <div class="tag-list">
+        <span class="tag">Python</span>
+        <span class="tag">Flask</span>
+        <span class="tag">React</span>
+        <span class="tag">SQLite</span>
+        <span class="tag">JWT / RBAC</span>
+        <span class="tag">REST APIs</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-card-title">PLATFORMS</div>
+      <div class="tag-list">
+        <span class="tag">Kali Linux</span>
+        <span class="tag">Windows Server</span>
+        <span class="tag">VirtualBox</span>
+        <span class="tag">TryHackMe</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-label">// experience</div>
+  <h2 class="section-title">Professional Experience</h2>
+  <div class="exp-card">
+    <div class="exp-header">
+      <div>
+        <div class="exp-role">Cybersecurity Intern</div>
+        <div class="exp-company">Nestsoft TechnoMaster Pvt Ltd · Cochin</div>
+      </div>
+      <div class="exp-period">2024</div>
+    </div>
+    <div class="exp-body">
+      <ul>
+        <li>Built <strong>VulnScanner</strong> — a Python-based vulnerability assessment CLI tool now evolved into a full-stack platform.</li>
+        <li>Performed port scanning, CVE detection, and automated web application security testing.</li>
+        <li>Implemented SQLi and XSS detection modules with real-time scan progress tracking.</li>
+        <li>Designed REST API backend with JWT authentication and role-based access control.</li>
+        <li>Integrated APScheduler for scheduled automated scans via an admin panel.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-label">// projects</div>
+  <h2 class="section-title">Featured Projects</h2>
+  <div class="projects-grid">
+
+    <div class="project-card">
+      <div class="project-card-header">
+        <div class="project-icon">🔍</div>
+        <div class="project-links">
+          <a href="https://github.com/sudev404/vuln_scanner" target="_blank" class="project-link">GitHub ↗</a>
+        </div>
+      </div>
+      <div class="project-name">VulnScanner</div>
+      <div class="project-desc">
+        Full-stack web vulnerability assessment platform. Four-phase scanning pipeline:
+        Nmap port scan → CVE detection → pure-Python web scanner → SQLi/XSS testing.
+        React/Vite frontend with real-time progress, JWT auth, RBAC, and an admin panel
+        with APScheduler-powered scheduled scans.
+      </div>
+      <div class="project-tags">
+        <span class="project-tag">Python</span>
+        <span class="project-tag">Flask</span>
+        <span class="project-tag">React</span>
+        <span class="project-tag">SQLite</span>
+        <span class="project-tag">Nmap</span>
+        <span class="project-tag">JWT</span>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-card-header">
+        <div class="project-icon">🏰</div>
+        <div class="project-links">
+          <a href="https://github.com/sudev404" target="_blank" class="project-link">GitHub ↗</a>
+        </div>
+      </div>
+      <div class="project-name">Local Active Directory Lab</div>
+      <div class="project-desc">
+        Penetration testing lab demonstrating full Windows domain compromise on a simulated
+        corp.local environment. Covers all seven attack phases: AS-REP roasting,
+        Kerberoasting, Pass-the-Hash, lateral movement, DCSync, and Golden Ticket persistence.
+      </div>
+      <div class="project-tags">
+        <span class="project-tag">Windows Server</span>
+        <span class="project-tag">Impacket</span>
+        <span class="project-tag">Mimikatz</span>
+        <span class="project-tag">Kerberos</span>
+        <span class="project-tag">Kali Linux</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTF / LABS -->
+<section id="labs">
+  <div class="section-label">// hands-on labs</div>
+  <h2 class="section-title">CTF &amp; TryHackMe</h2>
+  <p style="color:var(--muted);font-family:var(--mono);font-size:.8rem;margin-bottom:2rem;">
+    TryHackMe: <span style="color:var(--green)">mr_aztro</span>
+  </p>
+  <div class="labs-grid">
+    <div class="lab-item">
+      <div class="lab-dot danger"></div>
+      <div>
+        <div class="lab-name">Attacktive Directory</div>
+        <div class="lab-detail">AS-REP roasting · secretsdump · hash cracking · SMB enum</div>
+      </div>
+    </div>
+    <div class="lab-item">
+      <div class="lab-dot warn"></div>
+      <div>
+        <div class="lab-name">Mr. Robot</div>
+        <div class="lab-detail">WordPress exploit · PHP reverse shell · SUID nmap privesc</div>
+      </div>
+    </div>
+    <div class="lab-item">
+      <div class="lab-dot"></div>
+      <div>
+        <div class="lab-name">Network Services</div>
+        <div class="lab-detail">SMB enumeration · Telnet exploitation</div>
+      </div>
+    </div>
+    <div class="lab-item">
+      <div class="lab-dot danger"></div>
+      <div>
+        <div class="lab-name">MagnusBilling CVE-2023-30258</div>
+        <div class="lab-detail">Unauthenticated RCE · exploit development</div>
+      </div>
+    </div>
+    <div class="lab-item">
+      <div class="lab-dot warn"></div>
+      <div>
+        <div class="lab-name">CouchDB · CVE-2017-12635</div>
+        <div class="lab-detail">Privilege escalation · admin account creation</div>
+      </div>
+    </div>
+    <div class="lab-item">
+      <div class="lab-dot"></div>
+      <div>
+        <div class="lab-name">WiFi Security Testing</div>
+        <div class="lab-detail">aircrack-ng · WPA handshake capture · compat-wireless</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-label">// contact</div>
+  <h2 class="section-title">Let's Work Together</h2>
+  <div class="contact-box">
+    <p>
+      Actively seeking entry-level roles in penetration testing, vulnerability assessment,
+      or SOC analysis. Open to internships and freelance security engagements.
+    </p>
+    <div class="contact-links">
+      <div class="contact-row">
+        <span class="contact-label">email</span>
+        <a href="mailto:csudev5@gmail.com" class="contact-val">csudev5@gmail.com</a>
+      </div>
+      <div class="contact-row">
+        <span class="contact-label">phone</span>
+        <a href="tel:+918111965800" class="contact-val">+91 81119 65800</a>
+      </div>
+      <div class="contact-row">
+        <span class="contact-label">github</span>
+        <a href="https://github.com/sudev404" target="_blank" class="contact-val">github.com/sudev404</a>
+      </div>
+      <div class="contact-row">
+        <span class="contact-label">tryhackme</span>
+        <a href="https://tryhackme.com/p/mr_aztro" target="_blank" class="contact-val">mr_aztro</a>
+      </div>
+      <div class="contact-row">
+        <span class="contact-label">location</span>
+        <span class="contact-val">Bengaluru, India</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 Sudev CS · All rights reserved</p>
+  <p>Built with <a href="#">zero frameworks</a>, pure HTML/CSS</p>
+</footer>
+
+</body>
+</html>
